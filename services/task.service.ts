@@ -1,17 +1,26 @@
-import { Task } from "@/types/task"
-import { mockTasks } from "@/lib/mock-data"
-import { getFromStorage, saveToStorage } from "@/lib/storage"
 
 
-let tasks: Task[] = getFromStorage() ?? [...mockTasks]
+
+/*let tasks: Task[] = getFromStorage() ?? [...mockTasks]
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
-}
+}*/
+
+import { supabase } from "@/lib/supabase"
 
 export async function getTasks(): Promise<Task[]> {
-  await delay(500)
-  return tasks
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("*")
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Erro ao buscar tarefas:", error)
+    return []
+  }
+
+  return data as Task[]
 }
 
 export async function createTask(title: string): Promise<Task> {
@@ -25,7 +34,6 @@ export async function createTask(title: string): Promise<Task> {
   }
 
   tasks.unshift(newTask)
-  saveToStorage(tasks)
   return newTask
 }
 
@@ -35,12 +43,12 @@ export async function toggleTask(id: string): Promise<void> {
   tasks = tasks.map((task) =>
     task.id === id ? { ...task, completed: !task.completed } : task
   )
-  saveToStorage(tasks)
+  
 }
 
 export async function deleteTask(id: string): Promise<void> {
   await delay(500)
 
   tasks = tasks.filter((task) => task.id !== id)
-  saveToStorage(tasks)
+  
 } 
